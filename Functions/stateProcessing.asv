@@ -1,0 +1,60 @@
+function [ simulationData ] = stateProcessing(simData , i)
+%STATEPROCESSING Summary of this function goes here
+%   Detailed explanation goes here
+    simulationData = simData;
+    previousState = simData.robots(i).state;
+    simData.robots(i).engagement;
+    if previousState == 'F' || previousState == 'V'
+    else 
+        if simulationData.robots(i).efficiency <= 1/4 * simData.constants.RobotsEfficiency
+            
+            simulationData = proceedToRState(simData , i);
+        end
+
+        if previousState == 'R'
+            simulationData.robots(i).efficiency = simulationData.robots(i).efficiency +...
+                ( simData.constants.RobotsEfficiency - simulationData.robots(i).efficiency)/2;
+            if simulationData.robots(i).efficiency > 0.9 * simData.constants.RobotsEfficiency
+                simulationData.robots(i).speed = simData.constants.RobotSpeed;
+            end
+            simData.robots(i).engagement = simData.robots(i).engagement-1;
+        end
+
+        if simData.robots(i).engagement == 0
+            if previousState == 'M' 
+                simData.robots(i).state = 'W';
+                
+                    travelTime = simData.constants.OutOfMapRouteLenght + simData.robots(i).backtrackPath(simData.robots(i).position.posX, simData.robots(i).position.posY);
+                    travelTime = travelTime + simData.robots(simData.issuer).backtrackPath(simData.robots(simData.issuer).position.posX, simData.robots(simData.issuer).position.posY);
+                    simulationData.robots(i).position = simData.engagementPosition;
+                    simulationData.robots(i).engagement = travelTime;
+                
+                
+                simulationData = wState(simData , i);
+            elseif previousState == 'W'
+                simData.robots(i).state = 'W';
+                simulationData = wState(simData , i);
+            else 
+                switch previousState
+                    case 'E'
+                        simulationData = eState(simData , i);
+                    case 'P'
+                        simulationData = pState(simData , i);
+                    case 'H'
+                        simulationData = hState(simData , i);
+                    case 'D'
+                        simulationData = dState(simData , i);
+                    case 'C'
+                        simulationData = cState(simData , i);
+                    case 'R'
+                        simulationData.robots(i).state = 'E';
+                end
+            end
+
+        else
+            disp("
+            simData.robots(i).engagement = simData.robots(i).engagement-1;
+        end
+    end
+end
+

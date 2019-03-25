@@ -1,0 +1,95 @@
+clear all;
+close all;
+clc; 
+
+%% Input simulation data
+enemies = 10;
+enemiesDifficulty = 1;
+enemiesHardness = 1;
+enemiesDiffMode = 'default'; % default, integer - variance
+enemiesHardnessMode = 'default'; % default, integer - variance
+
+robots = 4;
+robotsEfficiency = 4;
+robotsSpeed = 5;
+robotsEfficiencyMode = 'default'; % default, integer - variance
+robotsSpeedMode = 'default'; % default, integer - variance
+
+mapSize = 100;
+outOfMapRouteLenght = mapSize;
+
+victoryMode = 'default'; % default, hostages, clear 
+hostages = 0;
+repairStrengh = 10;
+maximumTime = 1000000;
+
+constants = SimConstants(enemies, enemiesDifficulty, enemiesHardness, ...
+    robots, robotsEfficiency, robotsSpeed, mapSize, outOfMapRouteLenght, ...
+    enemiesDiffMode, enemiesHardnessMode, robotsEfficiencyMode, ...
+    robotsSpeedMode, victoryMode, hostages, repairStrengh,maximumTime);
+% disp(constants);
+
+%% Transfer coefficients
+
+% Wspó?czynniki E
+pNode = 1;
+hNode = 1/30;
+dNode = 1/100;
+rNode = pNode/50 *...
+            enemies / (mapSize*mapSize-robots);
+e = eCoefficientsData(pNode,hNode,dNode,rNode);
+
+% Wspó?czynniki P
+eNode = 1;
+hNode = 2;
+
+p = pCoefficientsData(eNode,hNode,rNode);
+
+% Wspó?czynniki M
+m = mCoefficientsData(rNode);
+
+% Wspó?czynniki H
+pNode = 1/2;
+dNode = 1/2;
+
+h = hCoefficientsData(pNode,dNode);
+
+% Wspó?czynniki W
+w = wCoefficientsData(rNode);
+
+% Wspó?czynniki C
+c = cCoefficientsData(rNode);
+
+% Wspó?czynniki R
+r = rCoefficientsData(rNode);
+
+
+coefficients = RandomCoefficientsData(e,p,m,h,w,c,r);
+% disp(coefficients);
+
+%% Map generation
+notRevealed = constants.MapSize * constants.MapSize;
+revealed =0;
+mapData = MapData(constants.MapSize, constants.Robots, revealed, notRevealed);
+% disp(mapData);
+
+%% Enemy generation
+
+enemiesVector = enemiesGeneration(constants.Enemies, constants.EnemiesDiff, constants.EnemiesHardness , constants.EnemiesDiffMode , constants.EnemiesHardnessMode);
+% disp(enemiesVector);
+
+%% Robot spawn
+
+robotsVector = robotsGeneration(constants.Robots, constants.RobotsEfficiency, constants.RobotSpeed , constants.RobotsEfficiencyMode , constants.RobotsSpeedMode , mapData.startingPositionsVector, constants.MapSize);
+% disp(robotsVector);
+
+%% Simulation setup
+
+simData = SimData(enemiesVector, robotsVector,coefficients,mapData,constants);
+
+% disp(simData);
+
+%% Simulation & output
+
+hiveSimulation(simData);
+
